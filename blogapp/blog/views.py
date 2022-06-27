@@ -1,7 +1,7 @@
 from ast import For
 from pickle import TRUE
 from django.http import HttpResponse
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from blog.models import Blog
 
 # Create your views here.
@@ -37,6 +37,9 @@ data = {
 
 
 def index(request):
+    if not request.user.is_authenticated:
+        return redirect("login")
+
     context={
         "blogs": Blog.objects.filter(is_home=True, is_active=True)
     }

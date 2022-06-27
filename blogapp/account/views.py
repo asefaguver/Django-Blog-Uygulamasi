@@ -1,7 +1,11 @@
 from django.shortcuts import render, redirect
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.models import User
 
 def login_request(request):
+    if request.user.is_authenticated:
+        return redirect("home")
+        
     if request.method == "POST":
         username = request.POST["username"]
         password = request.POST["password"]
@@ -16,7 +20,31 @@ def login_request(request):
     return render(request, "account/login.html")
 
 def register_request(request):
+    if request.method == "POST":                # post request ile bütün bilgileri alıyoruz.
+        username = request.POST["username"]
+        email = request.POST["email"]
+        firstname = request.POST["firstname"]
+        lastname = request.POST["lastname"]
+        password = request.POST["password"]
+        repassword = request.POST["repassword"]
+
+        if password == repassword:  # parolalar eşit mi? eşit değilse error mesajı verilerek register sayfasına yönlendiriliyor.
+            if User.objects.filter(username=username).exists(): # username daha önce kullanılmış mı? kullanılmışsa error mesajı verilerek register sayfasına yönlendiriliyor.
+                return render(request, "account/register.html", {"error" : "Girdiğiniz Username daha önceden alınmıştır. Lütfen başka bir Username belirleyin."})    
+            else:
+                if User.objects.filter(email=email).exists():   # mail adresi daha önce kullanılmış mı? kullanılmışsa error mesajı verilerek register sayfasına yönlendiriliyor.
+                    return render(request, "account/register.html", {"error" : "Girdiğiniz Mail adresi daha önceden alınmıştır. Lütfen başka bir Mail adresi belirleyin."})    
+                else:
+                    # create_user() özel bir method parolayı hashleyerek db'ye ekliyor. Normalde create() methodunu kullanıp alt satıra User.save()'de diyebiliriz.
+                    user=User.objects.create_user(username=username, email=email, first_name=firstname, last_name=lastname, password=password)      
+                    user.save()
+                    return redirect("login")
+
+        else:
+            return render(request, "account/register.html", {"error" : "girdiğiniz parolalar uyuşmamaktadır"})
+
     return render(request, "account/register.html")
 
-def logout_request():
+def logout_request(request):
+    logout(request)
     return redirect("home")
